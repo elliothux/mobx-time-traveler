@@ -22,7 +22,11 @@ export const withTimeTravel = <T extends { new (...args: unknown[]): any }>(targ
 
 let updating = false;
 
-export const withSnapshot = (target: object, propertyKey: string, descriptor?: PropertyDescriptor): void => {
+export const withSnapshot = (payload?: Record<string, any>) => (
+  target: object,
+  propertyKey: string,
+  descriptor?: PropertyDescriptor,
+): void => {
   const { initializer } = descriptor as any;
   descriptor!.value = function(...args: Parameters<ReturnType<typeof initializer>>) {
     const inUpdating = updating;
@@ -35,7 +39,7 @@ export const withSnapshot = (target: object, propertyKey: string, descriptor?: P
         if (result instanceof Promise) {
           await result;
         }
-        timeTraveler.updateSnapshots();
+        timeTraveler.updateSnapshots(payload);
         updating = false;
       }, 0);
     }
@@ -43,7 +47,25 @@ export const withSnapshot = (target: object, propertyKey: string, descriptor?: P
   };
 };
 
-export const actionWithSnapshot = (...params: Parameters<typeof withSnapshot>) => {
-  withSnapshot(...params);
-  return (action as any)(...params);
+interface ActionWithSnapshot {
+  (target: object, propertyKey: string, descriptor?: PropertyDescriptor): void;
+  (payload: Record<string, any>): (target: object, propertyKey: string, descriptor?: PropertyDescriptor) => void;
+}
+
+export const actionWithSnapshot: ActionWithSnapshot = (
+  payloadOrTarget: Record<string, any> | object,
+  propertyKey?: string,
+  descriptor?: PropertyDescriptor,
+) => {
+  if (!propertyKey) {
+    const payload = payloadOrTarget as Record<string, any>;
+    return (target: object, propertyKey: string, descriptor?: PropertyDescriptor) => {
+      withSnapshot(payload)(target, propertyKey, descriptor);
+      return action(target, propertyKey, descriptor);
+    };
+  }
+
+  const target = payloadOrTarget as object;
+  withSnapshot(undefined)(target, propertyKey, descriptor);
+  return action(target, propertyKey, descriptor) as any;
 };

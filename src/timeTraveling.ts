@@ -18,26 +18,36 @@ export class TimeTraveler {
   };
 
   @action
-  public initSnapshots = (snapshots?: Snapshots) => {
-    this.stacks = [snapshots || this.getSnapshots()];
+  public initSnapshots = (payload?: Record<string, any>, snapshots?: Snapshots) => {
+    const item = snapshots || this.getSnapshots();
+    if (payload) {
+      item.payload = payload;
+    }
+    this.stacks = [item];
     this.cursor = 0;
   };
 
   @action
-  public updateSnapshots = (snapshots?: Snapshots) => {
+  public updateSnapshots = (payload?: Record<string, any>, snapshots?: Snapshots) => {
     const { stacks } = this;
-    stacks.push(snapshots || this.getSnapshots());
+    const item = snapshots || this.getSnapshots();
+    if (payload) {
+      item.payload = payload;
+    }
+    stacks.push(item);
     this.cursor = stacks.length - 1;
   };
 
   @computed
   public get canUndo() {
-    return this.stacks.length > 1 && this.cursor > 0;
+    const { stacks, cursor } = this;
+    return stacks.length > 1 && 0 < cursor && cursor < stacks.length;
   }
 
   @computed
   public get canRedo() {
-    return this.stacks.length > 1 && this.cursor < this.stacks.length;
+    const { stacks, cursor } = this;
+    return stacks.length > 1 && 0 <= cursor && cursor < stacks.length - 1;
   }
 
   @action
@@ -46,10 +56,11 @@ export class TimeTraveler {
     if (!this.canUndo) {
       return;
     }
+    const currentSnapshots = stacks[cursor];
     const snapshots = stacks[cursor - 1];
     this.cursor -= 1;
     return restoreSnapshot(snapshots, () => {
-      this.restoreCallbacks.forEach(callback => callback('undo', snapshots));
+      this.restoreCallbacks.forEach(callback => callback('undo', snapshots, currentSnapshots));
     });
   };
 
@@ -59,10 +70,11 @@ export class TimeTraveler {
     if (!this.canRedo) {
       return;
     }
+    const currentSnapshots = stacks[cursor];
     const snapshots = stacks[cursor + 1];
-    this.cursor -= 1;
+    this.cursor += 1;
     return restoreSnapshot(snapshots, () => {
-      this.restoreCallbacks.forEach(callback => callback('redo', snapshots));
+      this.restoreCallbacks.forEach(callback => callback('redo', snapshots, currentSnapshots));
     });
   };
 
