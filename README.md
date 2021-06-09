@@ -33,8 +33,8 @@ const App = observer(() => {
     return (
         <div>
             <p>{foo}</p>
-            {canUndo ? <button onClick={undo}>{undo}</button> : null}
-            {canRndo ? <button onClick={redo}>{redo}</button> : null}
+            {canUndo ? <button onClick={undo}>undo</button> : null}
+            {canRedo ? <button onClick={redo}>redo</button> : null}
         </div>
     );
 });
