@@ -13,7 +13,7 @@
     "declaration": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "lib": ["ES2015"]
+    "lib": ["ES2015", "ES6", "ES2017", "DOM"]
   },
   "compileOnSave": true
 }
