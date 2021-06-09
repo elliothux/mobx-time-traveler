@@ -1,3 +1,4 @@
+import { action } from 'mobx';
 import { timeTraveler } from './timeTraveling';
 import { recordStoreHistory, recordedStores } from './record';
 
@@ -21,7 +22,7 @@ export const withTimeTravel = <T extends { new (...args: unknown[]): any }>(targ
 
 let updating = false;
 
-export const withHistory = (target: object, propertyKey: string, descriptor?: PropertyDescriptor): void => {
+export const withSnapshot = (target: object, propertyKey: string, descriptor?: PropertyDescriptor): void => {
   const { initializer } = descriptor as any;
   descriptor!.value = function(...args: Parameters<ReturnType<typeof initializer>>) {
     const inUpdating = updating;
@@ -40,4 +41,9 @@ export const withHistory = (target: object, propertyKey: string, descriptor?: Pr
     }
     return result;
   };
+};
+
+export const actionWithSnapshot = (...params: Parameters<typeof withSnapshot>) => {
+  withSnapshot(...params);
+  return (action as any)(...params);
 };

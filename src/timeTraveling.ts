@@ -1,5 +1,5 @@
 import { action, computed, observable } from 'mobx';
-import { Snapshots } from './types';
+import { RestoreCallback, Snapshots } from './types';
 import { recordedStores, restoreSnapshot } from './record';
 import { dehydrate } from './hydrate';
 
@@ -46,9 +46,11 @@ export class TimeTraveler {
     if (!this.canUndo) {
       return;
     }
-    const snapshot = stacks[cursor - 1];
+    const snapshots = stacks[cursor - 1];
     this.cursor -= 1;
-    return restoreSnapshot(snapshot);
+    return restoreSnapshot(snapshots, () => {
+      this.restoreCallbacks.forEach(callback => callback('undo', snapshots));
+    });
   };
 
   @action
@@ -57,9 +59,23 @@ export class TimeTraveler {
     if (!this.canRedo) {
       return;
     }
-    const snapshot = stacks[cursor + 1];
+    const snapshots = stacks[cursor + 1];
     this.cursor -= 1;
-    return restoreSnapshot(snapshot);
+    return restoreSnapshot(snapshots, () => {
+      this.restoreCallbacks.forEach(callback => callback('redo', snapshots));
+    });
+  };
+
+  private readonly restoreCallbacks: RestoreCallback[] = [];
+
+  public onRestore = (callback: RestoreCallback) => {
+    const { restoreCallbacks } = this;
+    const index = restoreCallbacks.findIndex(i => i === callback);
+    if (index > -1) {
+      return () => restoreCallbacks.splice(index, 1);
+    }
+    restoreCallbacks.push(callback);
+    return () => restoreCallbacks.splice(restoreCallbacks.length - 1, 1);
   };
 }
 

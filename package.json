@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Make mobx store time-traveling with undo &amp; redo easily",
   "main": "src",
+  "module": "dist",
   "scripts": {
     "dev": "./node_modules/.bin/tsc -w",
     "dist": "rm -rf ./dist; ./node_modules/.bin/tsc",
@@ -24,6 +25,7 @@
   },
   "homepage": "https://github.com/Aedron/mobx-time-traveler#readme",
   "files": [
-    "src"
+    "src",
+    "dist"
   ]
 }

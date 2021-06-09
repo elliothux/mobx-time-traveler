@@ -8,17 +8,16 @@ npm install --save mobx-time-traveler
 
 ## Usage
 ```tsx
-import { action, observable } from 'mobx';
+import { observable } from 'mobx';
 import { observer } from 'mobx-react';
-import { withTimeTravel, withHistory, timeTraveler } from 'mobx-time-traveler';
+import { withTimeTravel, actionWithSnapshot, timeTraveler } from 'mobx-time-traveler';
 
 @withTimeTravel
 class MyStore {
     @observable
     foo = 1;
 
-    @action
-    @withHistory
+    @actionWithSnapshot
     setFoo = (foo: number) => {
         this.foo = 1;
     }
@@ -28,11 +27,14 @@ const myStore = new MyStore();
 
 const App = observer(() => {
     const { undo, redo, canUndo, canRedo } = timeTraveler;
-    const { foo } = myStore;
+    const { foo, setFoo } = myStore;
+    
+    const onChange = useCallback(() => setFoo(Math.random() * 100), []);
 
     return (
         <div>
             <p>{foo}</p>
+            <button onClick={onChange}>random change</button>
             {canUndo ? <button onClick={undo}>undo</button> : null}
             {canRedo ? <button onClick={redo}>redo</button> : null}
         </div>
@@ -43,6 +45,7 @@ const App = observer(() => {
 ## API
 
 * withTimeTravel
-* withHistory
+* withSnapshot
+* actionWithSnapshot
 * timeTraveler
 * configure
