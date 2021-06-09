@@ -19,7 +19,7 @@ class MyStore {
     @observable
     foo = 1;
 
-    // Mark this action's effects be recorded by time-traveler
+    // Mark this action's effects recorded by time-traveler
     // Can also use "@action @withSnapshot"
     @actionWithSnapshot
     setFoo = (foo: number) => {
@@ -38,7 +38,7 @@ const App = observer(() => {
     const onChange = useCallback(() => setFoo(Math.random() * 100), []);
 
     useEffect(() => {
-        // Mark state of this moment as initial state
+        // Record current state as initial state
         timeTraveler.initSnapshots();
     }, []);
 
