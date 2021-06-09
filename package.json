@@ -1,0 +1,29 @@
+{
+  "name": "mobx-time-traveler",
+  "version": "0.1.0",
+  "description": "Make mobx store time-traveling with undo &amp; redo easily",
+  "main": "src",
+  "scripts": {
+    "dev": "./node_modules/.bin/tsc -w",
+    "dist": "rm -rf ./dist; ./node_modules/.bin/tsc",
+    "publish": "npm publish --access public"
+  },
+  "devDependencies": {
+    "typescript": "^4.3.2"
+  },
+  "peerDependencies": {
+    "mobx": "*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Aedron/mobx-time-traveler.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Aedron/mobx-time-traveler/issues"
+  },
+  "homepage": "https://github.com/Aedron/mobx-time-traveler#readme",
+  "files": [
+    "src"
+  ]
+}
