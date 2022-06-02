@@ -1,10 +1,10 @@
 import { action } from 'mobx';
 import { timeTraveler } from './timeTraveling';
-import { recordStoreHistory, recordedStores } from './record';
+import { recordStoreHistory, recordedStores, ignoreStoreField } from './record';
 
 export const withTimeTravel = <T extends { new (...args: unknown[]): any }>(target: T): T => {
   const original = target;
-  const f = function(...args: ConstructorParameters<typeof target>) {
+  const f = function (...args: ConstructorParameters<typeof target>) {
     const { name } = original;
     if (recordedStores[name]) {
       throw new Error(
@@ -22,39 +22,32 @@ export const withTimeTravel = <T extends { new (...args: unknown[]): any }>(targ
 
 let updating = false;
 
-export const withSnapshot = (payload?: Record<string, any>) => (
-  target: object,
-  propertyKey: string,
-  descriptor?: PropertyDescriptor,
-): void => {
-  const { initializer } = descriptor as any;
-  descriptor!.value = function(...args: Parameters<ReturnType<typeof initializer>>) {
-    const inUpdating = updating;
-    if (!inUpdating) {
-      updating = true;
-    }
-    const result = initializer.call(target).apply(target, args);
-    if (!inUpdating) {
-      window.setTimeout(async () => {
-        if (result instanceof Promise) {
-          await result;
-        }
-        timeTraveler.updateSnapshots(payload);
-        updating = false;
-      }, 0);
-    }
-    return result;
+export const withSnapshot = (payload?: Record<string, any>) => {
+  return (target: object, propertyKey: string, descriptor?: PropertyDescriptor): void => {
+    const { initializer } = descriptor as any;
+    descriptor!.value = function (...args: Parameters<ReturnType<typeof initializer>>) {
+      const inUpdating = updating;
+      if (!inUpdating) {
+        updating = true;
+      }
+      const result = initializer.call(target).apply(target, args);
+      if (!inUpdating) {
+        window.setTimeout(async () => {
+          if (result instanceof Promise) {
+            await result;
+          }
+          timeTraveler.updateSnapshots(target.constructor.name, propertyKey, payload);
+          updating = false;
+        }, 0);
+      }
+      return result;
+    };
+    return descriptor as any;
   };
-  return descriptor as any;
 };
 
-interface ActionWithSnapshot {
-  (target: object, propertyKey: string, descriptor?: PropertyDescriptor): void;
-  (payload: Record<string, any>): (target: object, propertyKey: string, descriptor?: PropertyDescriptor) => void;
-}
-
-export const actionWithSnapshot: ActionWithSnapshot = (
-  payloadOrTarget: Record<string, any> | object,
+export const actionWithSnapshot = <T extends object = Record<string, any>>(
+  payloadOrTarget: T | object,
   propertyKey?: string,
   descriptor?: PropertyDescriptor,
 ) => {
@@ -69,4 +62,8 @@ export const actionWithSnapshot: ActionWithSnapshot = (
   const target = payloadOrTarget as object;
   withSnapshot.call(target)(target, propertyKey, descriptor);
   return action.call(target, target, propertyKey, descriptor) as any;
+};
+
+export const ignoreSnapshot = (target: object, propertyKey: string): void => {
+  ignoreStoreField(target.constructor.name, propertyKey);
 };

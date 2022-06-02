@@ -1,6 +1,6 @@
 import { isArray, isMap, isObject, isFunction } from './utils';
 
-export function dehydrate(state: any) {
+export function dehydrate(state: any, ignores?: { [key: string]: boolean }) {
   if (isArray(state)) {
     return state.length ? state.map(dehydrate) : [];
   }
@@ -18,6 +18,9 @@ export function dehydrate(state: any) {
 
   if (isObject(state)) {
     return Object.keys(state).reduce<Record<string, any>>((acc, stateName) => {
+      if (ignores?.[stateName]) {
+        return acc;
+      }
       const value = dehydrate(state[stateName]);
       if (value !== undefined) {
         acc[stateName] = value;

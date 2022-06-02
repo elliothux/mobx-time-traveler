@@ -1,6 +1,6 @@
 {
   "name": "mobx-time-traveler",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "description": "Make mobx store time-traveling with undo &amp; redo easily",
   "main": "src",
   "module": "dist",
@@ -27,5 +27,8 @@
   "files": [
     "src",
     "dist"
-  ]
+  ],
+  "dependencies": {
+    "mobx": "^6.6.0"
+  }
 }

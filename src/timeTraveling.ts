@@ -1,6 +1,6 @@
 import { action, computed, observable, IObservableValue } from 'mobx';
 import { RestoreCallback, Snapshots } from './types';
-import { recordedStores, restoreSnapshot } from './record';
+import { ignoreStoreFields, recordedStores, restoreSnapshot } from './record';
 import { dehydrate } from './hydrate';
 import { config } from './configure';
 
@@ -13,30 +13,34 @@ export class TimeTraveler {
 
   private lastUpdate = 0;
 
-  public getSnapshots = (): Snapshots => {
-    return Object.entries(recordedStores).reduce<Snapshots>((accu, [k, v]) => {
-      accu[k] = dehydrate(v);
-      return accu;
-    }, {});
+  public getSnapshots = (store: string, method: string, payload?: Record<string, any>): Snapshots => {
+    return Object.entries(recordedStores).reduce<Snapshots>(
+      (accu, [k, v]) => {
+        accu.records[k] = dehydrate(v, ignoreStoreFields[k]);
+        return accu;
+      },
+      { store, method, payload, records: {} },
+    );
   };
+
+  private hasInitSnapshots = false;
 
   @action
   public initSnapshots = (payload?: Record<string, any>, snapshots?: Snapshots) => {
-    const item = snapshots || this.getSnapshots();
-    if (payload) {
-      item.payload = payload;
+    if (this.hasInitSnapshots) {
+      return;
     }
+    this.hasInitSnapshots = true;
+    const item = snapshots || this.getSnapshots('TimeTraveler', 'initSnapshots', payload);
+
     this.stacks = [observable.box(item, { deep: false })];
     this.cursor = 0;
   };
 
   @action
-  public updateSnapshots = (payload?: Record<string, any>, snapshots?: Snapshots) => {
+  public updateSnapshots = (store: string, method: string, payload?: Record<string, any>, snapshots?: Snapshots) => {
     const { stacks, cursor } = this;
-    const item = snapshots || this.getSnapshots();
-    if (payload) {
-      item.payload = payload;
-    }
+    const item = snapshots || this.getSnapshots(store, method, payload);
 
     if (cursor < stacks.length - 1) {
       stacks.splice(cursor + 1, stacks.length - cursor);
@@ -80,7 +84,7 @@ export class TimeTraveler {
     const snapshots = stacks[cursor - 1].get();
     this.cursor -= 1;
     return restoreSnapshot(snapshots, () => {
-      this.restoreCallbacks.forEach(callback => callback('undo', snapshots, currentSnapshots));
+      this.restoreCallbacks.forEach((callback) => callback('undo', snapshots, currentSnapshots));
     });
   };
 
@@ -94,20 +98,21 @@ export class TimeTraveler {
     const snapshots = stacks[cursor + 1].get();
     this.cursor += 1;
     return restoreSnapshot(snapshots, () => {
-      this.restoreCallbacks.forEach(callback => callback('redo', snapshots, currentSnapshots));
+      this.restoreCallbacks.forEach((callback) => callback('redo', snapshots, currentSnapshots));
     });
   };
 
   private readonly restoreCallbacks: RestoreCallback[] = [];
 
-  public onRestore = (callback: RestoreCallback) => {
-    const { restoreCallbacks } = this;
-    const index = restoreCallbacks.findIndex(i => i === callback);
-    if (index > -1) {
-      return () => restoreCallbacks.splice(index, 1);
+  public onRestore = <T extends object = Record<string, any>>(callback: RestoreCallback<T>) => {
+    if (!this.restoreCallbacks.includes(callback)) {
+      this.restoreCallbacks.push(callback);
     }
-    restoreCallbacks.push(callback);
-    return () => restoreCallbacks.splice(restoreCallbacks.length - 1, 1);
+
+    return () => {
+      const index = this.restoreCallbacks.findIndex((i) => i === callback);
+      this.restoreCallbacks.splice(index, 1);
+    };
   };
 }
 

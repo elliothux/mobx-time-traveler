@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
     "module": "CommonJS",
-    "target": "es5",
+    "target": "es6",
     "esModuleInterop": true,
     "noImplicitAny": true,
     "moduleResolution": "node",
     "sourceMap": true,
-    "outDir": "dist",
-    "baseUrl": "src",
+    "outDir": "./dist",
+    "baseUrl": "./src",
     "allowJs": false,
     "skipLibCheck": true,
     "declaration": true,
@@ -15,5 +15,6 @@
     "emitDecoratorMetadata": true,
     "lib": ["ES2015", "ES6", "ES2017", "DOM"]
   },
+  "include": ["src"],
   "compileOnSave": true
 }
