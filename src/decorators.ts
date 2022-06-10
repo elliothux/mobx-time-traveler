@@ -1,14 +1,18 @@
-import { action } from 'mobx';
-import { timeTraveler } from './timeTraveling';
-import { recordStoreHistory, recordedStores, ignoreStoreField } from './record';
+import "reflect-metadata";
+import { action } from "mobx";
+import { timeTraveler } from "./timeTraveling";
+import { recordStoreHistory, recordedStores, ignoreStoreField } from "./record";
 
-export const withTimeTravel = <T extends { new (...args: unknown[]): any }>(target: T): T => {
+export const withTimeTravel = <T extends { new (...args: unknown[]): any }>(
+  target: T
+): T => {
+  // return target;
   const original = target;
   const f = function (...args: ConstructorParameters<typeof target>) {
     const { name } = original;
     if (recordedStores[name]) {
       throw new Error(
-        `Store "${name}" has already been recorded. Make sure that every store has an unique class name and instantiated only once`,
+        `Store "${name}" has already been recorded. Make sure that every store has an unique class name and instantiated only once`
       );
     }
 
@@ -23,9 +27,30 @@ export const withTimeTravel = <T extends { new (...args: unknown[]): any }>(targ
 let updating = false;
 
 export const withSnapshot = (payload?: Record<string, any>) => {
-  return (target: object, propertyKey: string, descriptor?: PropertyDescriptor): void => {
-    const { initializer } = descriptor as any;
-    descriptor!.value = function (...args: Parameters<ReturnType<typeof initializer>>) {
+  return (
+    target: object,
+    propertyKey: string,
+    descriptor?: PropertyDescriptor
+  ): void => {
+    let v: any;
+    Object.defineProperty(target, propertyKey, {
+      get: () => {
+        debugger;
+        return v;
+      },
+      set: (i) => {
+        debugger;
+        v = i;
+      },
+      enumerable: true,
+      configurable: true,
+    });
+    return;
+
+    const { value: initializer } = descriptor as any;
+    descriptor!.value = function (
+      ...args: Parameters<ReturnType<typeof initializer>>
+    ) {
       const inUpdating = updating;
       if (!inUpdating) {
         updating = true;
@@ -36,7 +61,11 @@ export const withSnapshot = (payload?: Record<string, any>) => {
           if (result instanceof Promise) {
             await result;
           }
-          timeTraveler.updateSnapshots(target.constructor.name, propertyKey, payload);
+          timeTraveler.updateSnapshots(
+            target.constructor.name,
+            propertyKey,
+            payload
+          );
           updating = false;
         }, 0);
       }
@@ -47,13 +76,17 @@ export const withSnapshot = (payload?: Record<string, any>) => {
 };
 
 export const actionWithSnapshot = <T extends object = Record<string, any>>(
-  payloadOrTarget: T | object,
-  propertyKey?: string,
-  descriptor?: PropertyDescriptor,
+  payloadOrTarget: any,
+  propertyKey: string,
+  descriptor?: PropertyDescriptor
 ) => {
   if (!propertyKey) {
     const payload = payloadOrTarget as Record<string, any>;
-    return (target: object, propertyKey: string, descriptor?: PropertyDescriptor) => {
+    return (
+      target: object,
+      propertyKey: string,
+      descriptor?: PropertyDescriptor
+    ) => {
       withSnapshot.call(target, payload)(target, propertyKey, descriptor);
       return action.call(target, target, propertyKey, descriptor);
     };

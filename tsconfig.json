@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
-    "module": "CommonJS",
-    "target": "es6",
+    "target": "ES5",
     "esModuleInterop": true,
     "noImplicitAny": true,
     "moduleResolution": "node",
@@ -13,6 +12,7 @@
     "declaration": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "useDefineForClassFields": false,
     "lib": ["ES2015", "ES6", "ES2017", "DOM"]
   },
   "include": ["src"],
